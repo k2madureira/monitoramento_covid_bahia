@@ -58,7 +58,7 @@ app.listen(process.env.PORT || 3334, ()=>{
 
       
 
-      const browser = await puppeteer.launch({ headless: false });
+      const browser = await puppeteer.launch({ headless: true });
       const page = await browser.newPage();
       await page.goto('https://bi.saude.ba.gov.br/analytics/saw.dll?PortalPages&PortalPath=%2Fshared%2FSala%20Situa%C3%A7%C3%A3o%2FPain%C3%A9is%2FCOVID-19&Action=RefreshAll&StateAction=samePageState', {
         waitUntil: 'networkidle0',
@@ -71,8 +71,8 @@ app.listen(process.env.PORT || 3334, ()=>{
       await page.$eval('#idPassword', (el,{pass}) => {el.value = pass},{pass});
       await page.click('#btn_login');
      
-      // Get Data
-      await page.waitFor(6000);
+      // Get Data Geral
+      await page.waitFor(10000);
       const Results = await page.evaluate(() => {
         let results = [];
         let items = document.querySelectorAll('div.CardResponsivo');
@@ -98,7 +98,7 @@ app.listen(process.env.PORT || 3334, ()=>{
         })
         
       });
-      console.log(values);
+      console.log(values ? "Monitoramento Salvo" : "Erro ao buscar dados de Monitoramento");
       const data = JSON.stringify(values);
       const xls = json2xls(values);
   
@@ -111,12 +111,83 @@ app.listen(process.env.PORT || 3334, ()=>{
       });
   
     
-      let selector = 'img.obipsTabBarOverflow';
-     // await page.evaluate((selector) => document.querySelector(selector).click(), selector); 
-  
-  
+      //let selector = '#dashboard_page_7_tab';
+     // await page.evaluate((selector) => document.querySelector(selector).click(), selector);
+      await page.waitFor(15000);
+      await page.click('#dashboard_page_8_tab');
+
+
+      await page.waitFor(10000);
+      await page.click('img.TapeDeckImageEna:nth-child(4)');
+
+      // Get Data Ocupação
+      await page.waitFor(10000);
+      const Ocupacao = await page.evaluate(() => {
+        let results = [];
+        let result_aux = {};
+        let repeat = {};
+        let header = [];
+        let head = "";
+        let itens_td = document.querySelectorAll('.PTChildPivotTable > table > tbody > tr > td');
+       
+        let cont = 0;
+        itens_td.forEach((item, index) => {
+          
+          if(index >= 7 && index <= 27) {
+            header.push(item.innerText);
+            
+          } else if(index > 27) {
+            
+            if(cont < 20) {
+
+              head = header[cont] === 'N. de pacientes' ? 'N_pacientes':  header[cont];
+              head = head === '% Casos Confirm' ? '%_Casos_Confirmados':  head;
+
+              if(!repeat[head]) {
+                result_aux[(head).toString()] = item.innerText;
+                repeat[head] = 1;
+              } else {
+                result_aux[ (head + repeat[head]).toString() ] = item.innerText;
+                repeat[head]++;
+              }
+              
+              cont++;
+            } else {
+              result_aux[ (head).toString() ] = item.innerText; 
+              results.push(result_aux);
+
+              result_aux = {};
+              repeat={};
+              cont = 0;
+            }
+              
+             
+          }
+        });
+
+        results = {
+          header,
+          results
+        }
+        return results;
+    })
+      //console.log(Ocupacao);
+      const ocupacao = JSON.stringify(Ocupacao.results);
+      const ocupacaoXls = json2xls(Ocupacao.results);
+
+      const pathOcupaJson = path.join(__dirname, 'files','json','Ocupacao.json');
+      fs.writeFileSync(pathOcupaJson, ocupacao);
+
+      
+      const pathOcupaXlsx = path.join(__dirname, 'files','xlsx','Ocupacao.xlsx');
+      fs.writeFileSync(pathOcupaXlsx, ocupacaoXls, 'binary', (err) => {
+              if (err) { console.log("writeFileSync :", err);}
+            });
+     
+      
   
       logs();
+      await page.waitFor(5000);
       await browser.close();
     })();
   }
@@ -138,8 +209,8 @@ app.listen(process.env.PORT || 3334, ()=>{
     // Dia em string;
     const dia_str = dias[dia-1]; 
 
-    if(minutos === 3 && segundos === 0) {
-      console.log(`Dia [${dia_str}],  Horas [${horas}], Minutos [${minutos}], Segundos [${segundos}]`);
+    if(minutos === 7 && segundos === 0) {
+      console.log(`Dia [${dia_str}],  ${horas}:${minutos}:${segundos}`);
       
       load_files();
     }
