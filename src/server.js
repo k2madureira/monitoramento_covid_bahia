@@ -64,7 +64,7 @@ app.listen(process.env.PORT || 3334, ()=>{
         waitUntil: 'networkidle0',
       });
       // Login
-      await page.waitFor(10000);
+      await page.waitFor(15000);
       const user = process.env.USER;
       const pass = process.env.PASSWORD;
       await page.$eval('#idUser', (el,{user}) => {el.value = user},{user});
@@ -72,35 +72,39 @@ app.listen(process.env.PORT || 3334, ()=>{
       await page.click('#btn_login');
      
       // Get Data Geral
-      await page.waitFor(10000);
+      await page.waitFor(15000);
       const Results = await page.evaluate(() => {
-        let results = [];
-        let items = document.querySelectorAll('div.CardResponsivo');
-    
-        items.forEach((item) => {
-            results.push({
-              val: item.innerText,
-          });
+        let results = [],
+            result_aux = {},
+            cont = 0,
+            items = document.querySelectorAll('div.CardResponsivo');
+        
+       
+        items.forEach((item, index) => {
+          let str = item.innerText;
+            const str_split = str.split("\n");
+            let title = str_split[0];
+            let num = str_split[1];
+            title = title === '. CONFIRMADOS LABORATORIALMENTE.' ? 'CONFIRMADOS LABORATORIALMENTE':  title;
+
+          if(cont < 24) {     
+            result_aux[title] = num;
+            cont++;
+          } else {
+            result_aux[title] = num;
+            results.push(result_aux);
+            result_aux = {};
+            cont = 0;
+          }
+
+          
         });
         return results;
     })
       
-      let values = [];
-      Results.forEach((e, index) => {
-        const str_split = e.val.split("\n");
-        //console.log(str_split);
-        const title = str_split[0];
-        const num = str_split[1];
-        
-        values.push({
-          title,
-          val: num
-        })
-        
-      });
-      console.log(values ? `Monitoramento Salvo` : `Erro ao buscar dados de Monitoramento `);
-      const data = JSON.stringify(values);
-      const xls = json2xls(values);
+      console.log(Results ? `Monitoramento Salvo` : `Erro ao buscar dados de Monitoramento `);
+      const data = JSON.stringify(Results);
+      const xls = json2xls(Results);
   
       const pathJson = path.join(__dirname, 'files','json','Monitoramento.json');
       const pathXlsx = path.join(__dirname, 'files','xlsx','Monitoramento.xlsx');
@@ -113,15 +117,15 @@ app.listen(process.env.PORT || 3334, ()=>{
     
       //let selector = '#dashboard_page_7_tab';
      // await page.evaluate((selector) => document.querySelector(selector).click(), selector);
-      await page.waitFor(15000);
+      await page.waitFor(20000);
       await page.click('#dashboard_page_8_tab');
 
 
-      await page.waitFor(10000);
+      await page.waitFor(20000);
       await page.click('img.TapeDeckImageEna:nth-child(4)');
 
       // Get Data Ocupação
-      await page.waitFor(10000);
+      await page.waitFor(20000);
       const Ocupacao = await page.evaluate(() => {
         let results = [],
             result_aux = {},
