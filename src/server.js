@@ -72,7 +72,7 @@ app.listen(process.env.PORT || 3334, ()=>{
       await page.click('#btn_login');
      
       // Get Data Geral
-      await page.waitFor(15000);
+      await page.waitFor(20000);
       const Results = await page.evaluate(() => {
         let results = [],
             result_aux = {},
