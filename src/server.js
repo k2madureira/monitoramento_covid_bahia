@@ -57,7 +57,7 @@ app.listen(process.env.PORT || 3334, ()=>{
     (async () => {
 
       
-
+      const date = new Date();
       const browser = await puppeteer.launch({ headless: true });
       const page = await browser.newPage();
       await page.goto('https://bi.saude.ba.gov.br/analytics/saw.dll?PortalPages&PortalPath=%2Fshared%2FSala%20Situa%C3%A7%C3%A3o%2FPain%C3%A9is%2FCOVID-19&Action=RefreshAll&StateAction=samePageState', {
@@ -98,7 +98,7 @@ app.listen(process.env.PORT || 3334, ()=>{
         })
         
       });
-      console.log(values ? "Monitoramento Salvo" : "Erro ao buscar dados de Monitoramento");
+      console.log(values ? `Monitoramento Salvo` : `Erro ao buscar dados de Monitoramento `);
       const data = JSON.stringify(values);
       const xls = json2xls(values);
   
@@ -123,12 +123,12 @@ app.listen(process.env.PORT || 3334, ()=>{
       // Get Data Ocupação
       await page.waitFor(10000);
       const Ocupacao = await page.evaluate(() => {
-        let results = [];
-        let result_aux = {};
-        let repeat = {};
-        let header = [];
-        let head = "";
-        let itens_td = document.querySelectorAll('.PTChildPivotTable > table > tbody > tr > td');
+        let results = [],
+            result_aux = {},
+            repeat = {},
+            header = [],
+            head = "",
+            itens_td = document.querySelectorAll('.PTChildPivotTable > table > tbody > tr > td');
        
         let cont = 0;
         itens_td.forEach((item, index) => {
@@ -170,8 +170,9 @@ app.listen(process.env.PORT || 3334, ()=>{
           results
         }
         return results;
-    })
-      //console.log(Ocupacao);
+    });
+
+      console.log(Ocupacao ? `Ocupalçao Salva \n` : `Erro ao buscar dados de Ocupação \n`);
       const ocupacao = JSON.stringify(Ocupacao.results);
       const ocupacaoXls = json2xls(Ocupacao.results);
 
@@ -197,19 +198,19 @@ app.listen(process.env.PORT || 3334, ()=>{
     const diasx = [1,2,3,4,5,6,7];
     const dias  = ['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'];
 
-    const data = new Date();
-    const dia = data.getDay();	 
-    const horas = data.getHours();
-    const minutos = data.getMinutes();
-    const minutos_real = data.getMinutes();
-    const real_minutos = data.getMinutes();
-    const segundos = data.getSeconds();
+    const data = new Date(),
+          dia = data.getDay(),	 
+          horas = data.getHours(),
+          minutos = data.getMinutes(),
+          minutos_real = data.getMinutes(),
+          real_minutos = data.getMinutes(),
+          segundos = data.getSeconds();
     //console.log(segundos)
     
     // Dia em string;
     const dia_str = dias[dia-1]; 
 
-    if(minutos === 7 && segundos === 0) {
+    if((minutos === 10 || minutos === 20 || minutos === 30 || minutos === 40 || minutos === 50 || minutos === 59) && segundos === 0) {
       console.log(`Dia [${dia_str}],  ${horas}:${minutos}:${segundos}`);
       
       load_files();
